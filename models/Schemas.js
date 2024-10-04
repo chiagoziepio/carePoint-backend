@@ -110,6 +110,12 @@ const doctorSchema = mongoose.Schema({
   },
 });
 
+patientSchema.set("toJSON", {
+  transform: (doc, ret, options) => {
+    delete ret.password;
+    return ret;
+  },
+});
 const PatientModel = mongoose.model("patient", patientSchema);
 const DoctorModel = mongoose.model("doctor", doctorSchema);
 const AppointmentModel = mongoose.model("appointment", appointmentSchema);

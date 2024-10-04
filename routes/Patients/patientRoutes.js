@@ -1,9 +1,11 @@
-const express = require("express")
-const router = express.Router()
-const {handlePatientsRegisteration} = require("../../Controllers/PatientControllers")
+const express = require("express");
+const router = express.Router();
+const {
+  handlePatientsRegisteration,
+  handlePatientLogin,
+} = require("../../Controllers/PatientControllers");
 
+router.post("/register", handlePatientsRegisteration);
+router.post("/login", handlePatientLogin);
 
-router.post("/register",handlePatientsRegisteration)
-
-
-module.exports = router
+module.exports = router;
