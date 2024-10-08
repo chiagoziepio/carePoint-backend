@@ -20,7 +20,7 @@ const PORT = process.env.PORT || 3002;
 
 //db connection
 
-mongoose.connect("mongodb://0.0.0.0/meetifydb");
+mongoose.connect("mongodb://0.0.0.0/carepoint");
 const connc = mongoose.connection;
 connc.once("open", () => {
   console.log("connected to database");
@@ -36,3 +36,4 @@ connc.on("error", (err) => {
 // routes
 
 app.use("/api/patient", require("./routes/Patients/patientRoutes"));
+app.use("/api/admin", require("./routes/Admin/AdminRoutes"));

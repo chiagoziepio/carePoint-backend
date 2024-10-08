@@ -3,8 +3,8 @@ const bcrypt = require("bcryptjs");
 const { PatientModel, DoctorModel } = require("../models/Schemas");
 
 const handlePatientsRegisteration = async (req, res) => {
-  const { email, fullname, password } = req.body;
-  if (!email || !fullname || !password)
+  const { email, fullname, password, phone, address, gender } = req.body;
+  if (!email || !fullname || !password || !phone || !gender)
     return res.status(400).json({ status: false, msg: "provide all details" });
 
   try {
@@ -20,6 +20,9 @@ const handlePatientsRegisteration = async (req, res) => {
       fullname,
       password: hashPwd,
       email,
+      phone: +phone,
+      address,
+      gender,
     });
 
     await newpatient.save();

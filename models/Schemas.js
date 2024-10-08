@@ -19,9 +19,21 @@ const patientSchema = mongoose.Schema({
     required: true,
     unquie: true,
   },
+  phone: {
+    type: Number,
+    required: true,
+  },
   pic: {
     type: String,
     default: "",
+  },
+  address: {
+    type: String,
+    required: true,
+  },
+  gender: {
+    type: String,
+    required: true,
   },
   role: {
     type: String,
@@ -88,13 +100,26 @@ const doctorSchema = mongoose.Schema({
     required: true,
     unquie: true,
   },
+  qualification: {
+    type: String,
+  },
   specialty: [
     {
       type: String,
     },
   ],
+  service_fees: [
+    {
+      term: { type: String, required: true },
+      fees: {
+        consulting: { type: Number, required: true },
+        treatment: { type: Number, required: true },
+      },
+    },
+  ],
   doctorPic: {
     type: String,
+    default: "",
   },
   yearsInService: {
     type: Number,
@@ -106,7 +131,26 @@ const doctorSchema = mongoose.Schema({
   },
   des: {
     type: String,
+    default: "",
+  },
+  password: {
+    type: String,
     required: true,
+  },
+  address: {
+    type: String,
+    default: "",
+  },
+  registeredBy: {
+    type: String,
+  },
+  registerAt: {
+    type: Date,
+    default: Date.now,
+  },
+  firstTimeLogin: {
+    type: Boolean,
+    default: true,
   },
 });
 
