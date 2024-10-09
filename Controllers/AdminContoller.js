@@ -48,7 +48,7 @@ const handleCreateDoctor = async (req, res) => {
         .status(401)
         .json({ status: false, msg: "Action not permitted" });
 
-    const checkEmail = await PatientModel.findOne({ email });
+    const checkEmail = await DoctorModel.findOne({ email });
     if (checkEmail)
       return res
         .status(400)
@@ -107,7 +107,7 @@ const handleCreateDoctor = async (req, res) => {
       if (error) {
         return;
       }
-      console.log("Email sent: " + info.response);
+      //console.log("Email sent: " + info.response);
     });
     return res
       .status(201)

@@ -37,3 +37,4 @@ connc.on("error", (err) => {
 
 app.use("/api/patient", require("./routes/Patients/patientRoutes"));
 app.use("/api/admin", require("./routes/Admin/AdminRoutes"));
+app.use("/api/doctor", require("./routes/Doctor/DoctorRoute"));

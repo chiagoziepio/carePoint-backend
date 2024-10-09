@@ -55,7 +55,7 @@ const handlePatientLogin = async (req, res) => {
       status: true,
       msg: "successfully logged in",
       token: AccessToken,
-      patient: findPatient,
+      user: findPatient,
     });
   } catch (error) {
     return res.status(500).json({ status: false, msg: error.message });
@@ -70,7 +70,7 @@ const handlePatientLogout = async (req, res) => {
     const findPatient = await PatientModel.findById(_id);
     if (!findPatient)
       return res.status(404).json({ status: false, msg: "Invalid Id" });
-    return res.status(200).json({ status: true, token: null });
+    return res.status(200).json({ status: true, token: null, patient: null });
   } catch (error) {
     return res.status(500).json({ status: false, msg: error.message });
   }
