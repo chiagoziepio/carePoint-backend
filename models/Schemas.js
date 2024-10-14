@@ -43,6 +43,10 @@ const patientSchema = mongoose.Schema({
   password: {
     type: String,
   },
+  status: {
+    type: String,
+    default: "Available",
+  },
 });
 
 const appointmentSchema = mongoose.Schema({
@@ -58,15 +62,21 @@ const appointmentSchema = mongoose.Schema({
   status: {
     type: String,
     required: true,
-    default: "",
+    default: "pending",
   },
   appointmentDate: {
-    type: Date,
+    type: String,
+  },
+  appointmentTime: {
+    type: String,
   },
   fee: {
     type: Number,
   },
   appointementService: {
+    type: String,
+  },
+  appointementTerm: {
     type: String,
   },
   patientPic: {
@@ -155,6 +165,12 @@ const doctorSchema = mongoose.Schema({
 });
 
 patientSchema.set("toJSON", {
+  transform: (doc, ret, options) => {
+    delete ret.password;
+    return ret;
+  },
+});
+doctorSchema.set("toJSON", {
   transform: (doc, ret, options) => {
     delete ret.password;
     return ret;

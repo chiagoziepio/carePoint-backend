@@ -123,4 +123,18 @@ const handleCreateDoctor = async (req, res) => {
   }
 };
 
-module.exports = { handleCreateDoctor };
+const handleGetAllDoc = async (req, res) => {
+  try {
+    const docs = await DoctorModel.find();
+    const allDoctor = docs.map((doc) => {
+      const docObject = doc.toObject();
+      delete docObject.password; // Remove password field
+      return docObject;
+    });
+    return res.status(200).json({ status: true, doctors: allDoctor });
+  } catch (error) {
+    return res.status(500).json({ status: false, msg: error.message });
+  }
+};
+
+module.exports = { handleCreateDoctor, handleGetAllDoc };
