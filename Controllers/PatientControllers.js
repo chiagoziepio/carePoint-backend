@@ -195,10 +195,41 @@ const handleNBookAppointment = async (req, res) => {
   }
 };
 
+const handleGetAppointment = async (req, res) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader ? authHeader.split(" ")[1] : null;
+  const { _id } = req.params;
+  try {
+    if (!token)
+      return res.status(401).json({ status: "failed", msg: "access denied" });
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_KEY);
+    if (!decoded)
+      return res.status(401).json({ status: "failed", msg: "invalid token" });
+    const email = decoded.email;
+    const findPatient = await PatientModel.findOne({ email });
+    if (!findPatient)
+      return res.status(404).json({ status: false, msg: "account not found" });
+    if (!_id)
+      return res.status(400).json({ status: false, msg: "No id passed" });
+
+    const appointments = await AppointmentModel.find({ patientId: _id });
+    return res.status(200).json({ status: true, data: appointments });
+  } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      return res
+        .status(500)
+        .json({ status: "failed", msg: "token has expired" });
+    } else {
+      return res.status(500).json({ status: "failed", msg: error.message });
+    }
+  }
+};
+
 module.exports = {
   handlePatientsRegisteration,
   handlePatientLogin,
   handlePatientLogout,
   handleGetDoc,
   handleNBookAppointment,
+  handleGetAppointment,
 };
