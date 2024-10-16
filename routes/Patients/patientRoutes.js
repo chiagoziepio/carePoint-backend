@@ -9,6 +9,7 @@ const {
   handleGetAppointment,
   handleUUpdatePatientDetails,
   handlePatientPicUpdate,
+  handleClearPatientNotification,
 } = require("../../Controllers/PatientControllers");
 const upload = require("../../Config/multer");
 
@@ -20,5 +21,6 @@ router.post("/book-appointment", handleNBookAppointment);
 router.get("/get-appointment/:_id", handleGetAppointment);
 router.patch("/updatepatient", handleUUpdatePatientDetails);
 router.patch("/updatepic", upload.single("files"), handlePatientPicUpdate);
+router.delete("/clearnotification", handleClearPatientNotification);
 
 module.exports = router;

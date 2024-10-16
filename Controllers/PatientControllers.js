@@ -340,6 +340,43 @@ const handlePatientPicUpdate = async (req, res) => {
   }
 };
 
+const handleClearPatientNotification = async (req, res) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader ? authHeader.split(" ")[1] : null;
+  const { _id } = req.body;
+  try {
+    if (!token)
+      return res.status(401).json({ status: "failed", msg: "access denied" });
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_KEY);
+    if (!decoded)
+      return res.status(401).json({ status: "failed", msg: "invalid token" });
+    const email = decoded.email;
+    if (!_id)
+      return res
+        .status(400)
+        .json({ status: false, msg: "No notification id passed" });
+    const findPatient = await PatientModel.findOne({ email });
+    if (!findPatient)
+      return res.status(400).json({ status: false, msg: "No user found" });
+    const updatedPatient = await PatientModel.findOneAndUpdate(
+      { _id: findPatient._id },
+      { $pull: { notifications: { _id: _id } } },
+      { new: true }
+    );
+    return res
+      .status(200)
+      .json({ status: true, notifications: updatedPatient.notifications });
+  } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      return res
+        .status(500)
+        .json({ status: "failed", msg: "token has expired" });
+    } else {
+      return res.status(500).json({ status: "failed", msg: error.message });
+    }
+  }
+};
+
 module.exports = {
   handlePatientsRegisteration,
   handlePatientLogin,
@@ -349,4 +386,5 @@ module.exports = {
   handleGetAppointment,
   handleUUpdatePatientDetails,
   handlePatientPicUpdate,
+  handleClearPatientNotification,
 };
