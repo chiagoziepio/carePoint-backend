@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const uploadToCloudinary = require("../Config/cloudinaryConfig");
 const {
   PatientModel,
   DoctorModel,
@@ -225,6 +226,120 @@ const handleGetAppointment = async (req, res) => {
   }
 };
 
+const handleUUpdatePatientDetails = async (req, res) => {
+  const authHeader = req.headers.authorization;
+  const Accesstoken = authHeader ? authHeader.split(" ")[1] : null;
+  const { email, phone, address, fullname } = req.body;
+  try {
+    if (!Accesstoken)
+      return res.status(401).json({ status: "failed", msg: "access denied" });
+    const decoded = jwt.verify(Accesstoken, process.env.ACCESS_TOKEN_KEY);
+    if (!decoded)
+      return res.status(401).json({ status: "failed", msg: "invalid token" });
+    const Patientemail = decoded.email;
+    const findPatient = await PatientModel.findOne({ email: Patientemail });
+    if (!findPatient)
+      return res.status(404).json({ status: false, msg: "account not found" });
+    if (email && email !== findPatient.email) {
+      const checkEmail = await PatientModel.findOne({ email });
+      if (checkEmail) {
+        return res
+          .status(403)
+          .json({ status: false, msg: "Email already taken" });
+      }
+    }
+
+    const updatedPatient = await PatientModel.findByIdAndUpdate(
+      { _id: findPatient._id },
+      {
+        $set: {
+          fullname: fullname,
+          email,
+          phone: +phone,
+          address,
+        },
+      },
+      { new: true }
+    );
+
+    await AppointmentModel.updateMany(
+      { patientId: findPatient._id },
+      {
+        $set: {
+          patientName: updatedPatient.fullname,
+        },
+      }
+    );
+    const token = jwt.sign(
+      { email: updatedPatient.email },
+      process.env.ACCESS_TOKEN_KEY,
+      { expiresIn: "3h" }
+    );
+    return res.status(200).json({
+      status: true,
+      msg: "details updated",
+      user: updatedPatient,
+      token: token,
+    });
+  } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      return res
+        .status(500)
+        .json({ status: "failed", msg: "token has expired" });
+    } else {
+      return res.status(500).json({ status: "failed", msg: error.message });
+    }
+  }
+};
+
+const handlePatientPicUpdate = async (req, res) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader ? authHeader.split(" ")[1] : null;
+  try {
+    if (!token)
+      return res.status(401).json({ status: "failed", msg: "access denied" });
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_KEY);
+    if (!decoded)
+      return res.status(401).json({ status: "failed", msg: "invalid token" });
+    const email = decoded.email;
+    if (!req.file) {
+      return res.status(400).send("No file uploaded.");
+    }
+    const fileBuffer = req.file.buffer;
+    const result = await uploadToCloudinary(fileBuffer);
+
+    const updatedPatient = await PatientModel.findOneAndUpdate(
+      { email: email },
+      {
+        $set: {
+          pic: result.secure_url,
+        },
+      },
+      { new: true }
+    );
+
+    await AppointmentModel.updateMany(
+      { patientId: updatedPatient._id },
+      {
+        $set: {
+          patientPic: updatedPatient.pic,
+        },
+      }
+    );
+    return res
+      .status(200)
+      .json({ status: true, user: updatedPatient, msg: "Picture Uploaded" });
+  } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      return res
+        .status(500)
+        .json({ status: "failed", msg: "token has expired" });
+    } else {
+      return res.status(500).json({ status: "failed", msg: error.message });
+    }
+  }
+};
+
 module.exports = {
   handlePatientsRegisteration,
   handlePatientLogin,
@@ -232,4 +347,6 @@ module.exports = {
   handleGetDoc,
   handleNBookAppointment,
   handleGetAppointment,
+  handleUUpdatePatientDetails,
+  handlePatientPicUpdate,
 };
