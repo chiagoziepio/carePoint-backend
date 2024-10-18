@@ -216,6 +216,95 @@ const handleGetAppointment = async (req, res) => {
   }
 };
 
+const handleUpdateDocAppointment = async (req, res) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader ? authHeader.split(" ")[1] : null;
+  const { term, _id } = req.body;
+
+  try {
+    if (!token)
+      return res.status(401).json({ status: "failed", msg: "access denied" });
+
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_KEY);
+    if (!decoded)
+      return res.status(401).json({ status: "failed", msg: "invalid token" });
+
+    const email = decoded.email;
+    const findDoc = await DoctorModel.findOne({ email });
+
+    if (!findDoc)
+      return res.status(404).json({ status: false, msg: "account not found" });
+
+    if (!_id || !term)
+      return res
+        .status(400)
+        .json({ status: false, msg: "provide necessary details" });
+
+    const findAppointment = await AppointmentModel.findById(_id);
+
+    if (
+      !findAppointment ||
+      findAppointment.doctorId.toString() !== findDoc._id.toString()
+    )
+      return res.status(403).json({ status: false, msg: "Action not allowed" });
+
+    if (term === "reject") {
+      await AppointmentModel.findByIdAndDelete(_id);
+      const PatientNotification = {
+        notificationType: "Appointment",
+        text: `Your ${findAppointment.appointementService} with ${findDoc.fullname} has been rejected.`,
+      };
+
+      await PatientModel.findByIdAndUpdate(
+        findAppointment.patientId,
+        { $push: { notifications: PatientNotification } },
+        { new: true }
+      );
+
+      const appointments = await AppointmentModel.find({
+        doctorId: findDoc._id,
+      });
+      return res.status(202).json({
+        status: true,
+        data: appointments,
+        msg: "Appointment rejected and deleted",
+      });
+    }
+
+    await AppointmentModel.findByIdAndUpdate(
+      _id,
+      { $set: { status: term } },
+      { new: true }
+    );
+
+    const PatientNotification = {
+      notificationType: "Appointment",
+      text: `Your ${findAppointment.appointementService} with ${findDoc.fullname} has been ${term}.`,
+    };
+
+    await PatientModel.findByIdAndUpdate(
+      findAppointment.patientId,
+      { $push: { notifications: PatientNotification } },
+      { new: true }
+    );
+
+    const appointments = await AppointmentModel.find({ doctorId: findDoc._id });
+    return res.status(202).json({
+      status: true,
+      data: appointments,
+      msg: "Appointment status updated",
+    });
+  } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      return res
+        .status(500)
+        .json({ status: "failed", msg: "token has expired" });
+    } else {
+      return res.status(500).json({ status: "failed", msg: error.message });
+    }
+  }
+};
+
 module.exports = {
   handleDoctorLogin,
   handleDocLogout,
@@ -223,4 +312,5 @@ module.exports = {
   handleClearDocNotification,
   handleUpdateDocDetails,
   handleGetAppointment,
+  handleUpdateDocAppointment,
 };
