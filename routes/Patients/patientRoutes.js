@@ -10,6 +10,8 @@ const {
   handleUUpdatePatientDetails,
   handlePatientPicUpdate,
   handleClearPatientNotification,
+  handleGetPatientNotifications,
+  handleCancelPatNotification,
 } = require("../../Controllers/PatientControllers");
 const upload = require("../../Config/multer");
 
@@ -22,5 +24,7 @@ router.get("/get-appointment/:_id", handleGetAppointment);
 router.patch("/updatepatient", handleUUpdatePatientDetails);
 router.patch("/updatepic", upload.single("files"), handlePatientPicUpdate);
 router.delete("/clearnotification", handleClearPatientNotification);
+router.get("/get-notification/:_id", handleGetPatientNotifications);
+router.delete("/cnacel-appointment", handleCancelPatNotification);
 
 module.exports = router;

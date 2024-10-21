@@ -8,6 +8,7 @@ const {
   handleUpdateDocDetails,
   handleGetAppointment,
   handleUpdateDocAppointment,
+  handleGetDocNotification,
 } = require("../../Controllers/DoctorController");
 
 router.post("/login", handleDoctorLogin);
@@ -17,5 +18,6 @@ router.delete("/clearnotification", handleClearDocNotification);
 router.patch("/updatedocdetail", handleUpdateDocDetails);
 router.get("/getdoctorappointment/:_id", handleGetAppointment);
 router.patch("/update-appointment", handleUpdateDocAppointment);
+router.get("/get-notification/:_id", handleGetDocNotification);
 
 module.exports = router;
