@@ -1,6 +1,10 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-const { PatientModel, DoctorModel } = require("../models/Schemas");
+const {
+  PatientModel,
+  DoctorModel,
+  AppointmentModel,
+} = require("../models/Schemas");
 const uploadToCloudinary = require("../Config/cloudinaryConfig");
 const nodemailer = require("nodemailer");
 
@@ -137,4 +141,17 @@ const handleGetAllDoc = async (req, res) => {
   }
 };
 
-module.exports = { handleCreateDoctor, handleGetAllDoc };
+const handleGetAllAppointments = async (req, res) => {
+  try {
+    const appointments = await AppointmentModel.find();
+    return res.status(200).json({ status: true, data: appointments });
+  } catch (error) {
+    return res.status(500).json({ status: false, msg: error.message });
+  }
+};
+
+module.exports = {
+  handleCreateDoctor,
+  handleGetAllDoc,
+  handleGetAllAppointments,
+};

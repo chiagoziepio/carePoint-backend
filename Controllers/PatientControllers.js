@@ -50,7 +50,10 @@ const handlePatientLogin = async (req, res) => {
     const comparePwd = await bcrypt.compare(password, findPatient.password);
     if (!comparePwd)
       return res.status(400).json({ status: true, msg: "incorrect password" });
-
+    if (findPatient.status !== "Active")
+      return res
+        .status(401)
+        .json({ status: false, msg: "You are suspended from the app" });
     const AccessToken = jwt.sign(
       { email: findPatient.email },
       process.env.ACCESS_TOKEN_KEY,
@@ -457,6 +460,44 @@ const handleCancelPatNotification = async (req, res) => {
   }
 };
 
+const handleMarkAsRead = async (req, res) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader ? authHeader.split(" ")[1] : null;
+  const { notificationIds } = req.body;
+  console.log(notificationIds);
+
+  try {
+    if (!token)
+      return res.status(401).json({ status: "failed", msg: "access denied" });
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_KEY);
+    if (!decoded)
+      return res.status(401).json({ status: "failed", msg: "invalid token" });
+    const email = decoded.email;
+    const findPatient = await PatientModel.findOne({ email });
+    if (!findPatient)
+      return res.status(400).json({ status: false, msg: "No user found" });
+
+    if (!notificationIds)
+      return res.status(400).json({ status: false, msg: "No id passed" });
+    findPatient.notifications.forEach((notification) => {
+      if (notificationIds.includes(notification._id.toString())) {
+        notification.isRead = true;
+      }
+    });
+
+    await findPatient.save();
+    return res.status(200);
+  } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      return res
+        .status(500)
+        .json({ status: "failed", msg: "token has expired" });
+    } else {
+      return res.status(500).json({ status: "failed", msg: error.message });
+    }
+  }
+};
+
 module.exports = {
   handlePatientsRegisteration,
   handlePatientLogin,
@@ -469,4 +510,5 @@ module.exports = {
   handleClearPatientNotification,
   handleGetPatientNotifications,
   handleCancelPatNotification,
+  handleMarkAsRead,
 };

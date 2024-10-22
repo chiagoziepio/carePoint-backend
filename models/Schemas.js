@@ -7,6 +7,10 @@ const notificationSchema = mongoose.Schema({
   text: {
     type: String,
   },
+  isRead: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const patientSchema = mongoose.Schema({
@@ -35,6 +39,10 @@ const patientSchema = mongoose.Schema({
     type: String,
     required: true,
   },
+  status: {
+    type: String,
+    default: "Active",
+  },
   role: {
     type: String,
     default: "user",
@@ -42,10 +50,6 @@ const patientSchema = mongoose.Schema({
   notifications: [notificationSchema],
   password: {
     type: String,
-  },
-  status: {
-    type: String,
-    default: "Available",
   },
 });
 
@@ -109,6 +113,10 @@ const doctorSchema = mongoose.Schema({
     type: String,
     required: true,
     unquie: true,
+  },
+  status: {
+    type: String,
+    default: "Available",
   },
   qualification: {
     type: String,
