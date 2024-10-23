@@ -150,8 +150,18 @@ const handleGetAllAppointments = async (req, res) => {
   }
 };
 
+const handleGetAllPatients = async (req, res) => {
+  try {
+    const patients = await PatientModel.find();
+    return res.status(200).json({ status: true, data: patients });
+  } catch (error) {
+    return res.status(500).json({ status: false, msg: error.message });
+  }
+};
+
 module.exports = {
   handleCreateDoctor,
   handleGetAllDoc,
   handleGetAllAppointments,
+  handleGetAllPatients,
 };
