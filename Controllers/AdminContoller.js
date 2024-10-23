@@ -159,9 +159,235 @@ const handleGetAllPatients = async (req, res) => {
   }
 };
 
+const handleAdminCancelAppointment = async (req, res) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader ? authHeader.split(" ")[1] : null;
+  const { _id } = req.body;
+  try {
+    if (!token)
+      return res.status(401).json({ status: "failed", msg: "access denied" });
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_KEY);
+    if (!decoded)
+      return res.status(401).json({ status: "failed", msg: "invalid token" });
+    const email = decoded.email;
+    const findUser = await PatientModel.findOne({ email });
+    if (!findUser || findUser.role !== "admin")
+      return res
+        .status(401)
+        .json({ status: false, msg: "Action not permitted" });
+    const appointment = await AppointmentModel.findById(_id);
+    if (!appointment)
+      return res
+        .status(404)
+        .json({ status: false, msg: "Appointment not found" });
+    await AppointmentModel.findByIdAndDelete(_id);
+    const patientNotification = {
+      type: "Appointment",
+      text: `Your ${appointment.appointementService} appointment with ${appointment.doctorName} has been cancelled by the Admin`,
+    };
+    const doctorNotification = {
+      type: "Appointment",
+      text: `Your ${appointment.appointementService} appointment with ${appointment.patientName} has been cancelled by the Admin`,
+    };
+    await PatientModel.findByIdAndUpdate(
+      { _id: appointment.patientId },
+      {
+        $push: {
+          notifications: patientNotification,
+        },
+      },
+      { new: true }
+    );
+    await DoctorModel.findByIdAndUpdate(
+      { _id: appointment.doctorId },
+      {
+        $push: {
+          notifications: doctorNotification,
+        },
+      },
+      { new: true }
+    );
+    const otherAppointments = await AppointmentModel.find();
+    return res.status(202).json({
+      status: true,
+      msg: "Appointment cancelled successfully",
+      data: otherAppointments,
+    });
+  } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      return res
+        .status(500)
+        .json({ status: "failed", msg: "token has expired" });
+    } else {
+      return res.status(500).json({ status: "failed", msg: error.message });
+    }
+  }
+};
+
+const handleDeactiveDoctor = async (req, res) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader ? authHeader.split(" ")[1] : null;
+  const { _id } = req.body;
+
+  try {
+    if (!token)
+      return res.status(401).json({ status: "failed", msg: "access denied" });
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_KEY);
+    if (!decoded)
+      return res.status(401).json({ status: "failed", msg: "invalid token" });
+    const email = decoded.email;
+    const findUser = await PatientModel.findOne({ email });
+    if (!findUser || findUser.role !== "admin")
+      return res
+        .status(401)
+        .json({ status: false, msg: "Action not permitted" });
+    const doctor = await DoctorModel.findById(_id);
+    if (!doctor)
+      return res.status(404).json({ status: false, msg: " Doctor not found" });
+    await DoctorModel.findByIdAndUpdate(
+      { _id: doctor._id },
+      {
+        $set: {
+          status: "Deactivated",
+        },
+      },
+      { new: true }
+    );
+    const otherDoctors = await DoctorModel.find();
+    return res.status(202).json({
+      status: true,
+      msg: "Doctor deactivated successfully",
+      data: otherDoctors,
+    });
+  } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      return res
+        .status(500)
+        .json({ status: "failed", msg: "token has expired" });
+    } else {
+      return res.status(500).json({ status: "failed", msg: error.message });
+    }
+  }
+};
+
+const handleActivateDoc = async (req, res) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader ? authHeader.split(" ")[1] : null;
+  const { _id } = req.body;
+
+  try {
+    if (!token)
+      return res.status(401).json({ status: "failed", msg: "access denied" });
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_KEY);
+    if (!decoded)
+      return res.status(401).json({ status: "failed", msg: "invalid token" });
+    const email = decoded.email;
+    const findUser = await PatientModel.findOne({ email });
+    if (!findUser || findUser.role !== "admin")
+      return res
+        .status(401)
+        .json({ status: false, msg: "Action not permitted" });
+    const doctor = await DoctorModel.findById(_id);
+    if (!doctor)
+      return res.status(404).json({ status: false, msg: " Doctor not found" });
+    await DoctorModel.findByIdAndUpdate(
+      { _id: doctor._id },
+      {
+        $set: {
+          status: "Available",
+        },
+      },
+      { new: true }
+    );
+    const otherDoctors = await DoctorModel.find();
+    return res.status(202).json({
+      status: true,
+      msg: "Doctor deactivated successfully",
+      data: otherDoctors,
+    });
+  } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      return res
+        .status(500)
+        .json({ status: "failed", msg: "token has expired" });
+    } else {
+      return res.status(500).json({ status: "failed", msg: error.message });
+    }
+  }
+};
+
+const handleTogglePatientStatus = async (req, res) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader ? authHeader.split(" ")[1] : null;
+  const { _id } = req.body;
+  try {
+    if (!token)
+      return res.status(401).json({ status: "failed", msg: "access denied" });
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_KEY);
+    if (!decoded)
+      return res.status(401).json({ status: "failed", msg: "invalid token" });
+    const email = decoded.email;
+    const findUser = await PatientModel.findOne({ email });
+    if (!findUser || findUser.role !== "admin")
+      return res
+        .status(401)
+        .json({ status: false, msg: "Action not permitted" });
+    const patient = await PatientModel.findById(_id);
+    if (!patient)
+      return res.status(404).json({ status: false, msg: " Patient not found" });
+    if (!_id)
+      return res.status(400).json({ status: false, msg: "No Id provided" });
+    if (patient.status === "Active") {
+      await PatientModel.findByIdAndUpdate(
+        { _id: patient._id },
+        {
+          $set: {
+            status: "Deactivated",
+          },
+        },
+        { new: true }
+      );
+      const otherPatients = await PatientModel.find();
+      return res.status(202).json({
+        status: true,
+        msg: "Patient deactivated successfully",
+        data: otherPatients,
+      });
+    } else {
+      await PatientModel.findByIdAndUpdate(
+        { _id: patient._id },
+        {
+          $set: {
+            status: "Active",
+          },
+        },
+        { new: true }
+      );
+      const otherPatients = await PatientModel.find();
+      return res.status(202).json({
+        status: true,
+        msg: "Patient activated successfully",
+        data: otherPatients,
+      });
+    }
+  } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      return res
+        .status(500)
+        .json({ status: "failed", msg: "token has expired" });
+    } else {
+      return res.status(500).json({ status: "failed", msg: error.message });
+    }
+  }
+};
+
 module.exports = {
   handleCreateDoctor,
   handleGetAllDoc,
   handleGetAllAppointments,
   handleGetAllPatients,
+  handleAdminCancelAppointment,
+  handleDeactiveDoctor,
+  handleActivateDoc,
+  handleTogglePatientStatus,
 };
