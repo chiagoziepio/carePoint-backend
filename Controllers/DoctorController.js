@@ -204,7 +204,10 @@ const handleGetAppointment = async (req, res) => {
       return res.status(400).json({ status: false, msg: "No id passed" });
 
     const appointments = await AppointmentModel.find({ doctorId: _id });
-    return res.status(200).json({ status: true, data: appointments });
+    const filteredAppointments = appointments.filter(
+      (appointment) => appointment.status !== "rejected"
+    );
+    return res.status(200).json({ status: true, data: filteredAppointments });
   } catch (error) {
     if (error.name === "TokenExpiredError") {
       return res
@@ -219,7 +222,7 @@ const handleGetAppointment = async (req, res) => {
 const handleUpdateDocAppointment = async (req, res) => {
   const authHeader = req.headers.authorization;
   const token = authHeader ? authHeader.split(" ")[1] : null;
-  const { term, _id } = req.body;
+  const { term, _id, rejectionReason } = req.body;
 
   try {
     if (!token)
@@ -248,32 +251,44 @@ const handleUpdateDocAppointment = async (req, res) => {
     )
       return res.status(403).json({ status: false, msg: "Action not allowed" });
 
-    if (term === "reject") {
-      await AppointmentModel.findByIdAndDelete(_id);
-      const PatientNotification = {
-        notificationType: "Appointment",
-        text: `Your ${findAppointment.appointementService} with ${findDoc.fullname} has been rejected.`,
-      };
+    // if (term === "reject") {
+    //   await AppointmentModel.findByIdAndDelete(_id);
+    //   const PatientNotification = {
+    //     notificationType: "Appointment",
+    //     text: `Your ${findAppointment.appointementService} with ${findDoc.fullname} has been rejected.`,
+    //   };
 
-      await PatientModel.findByIdAndUpdate(
-        findAppointment.patientId,
-        { $push: { notifications: PatientNotification } },
-        { new: true }
-      );
+    //   await PatientModel.findByIdAndUpdate(
+    //     findAppointment.patientId,
+    //     { $push: { notifications: PatientNotification } },
+    //     { new: true }
+    //   );
 
-      const appointments = await AppointmentModel.find({
-        doctorId: findDoc._id,
-      });
-      return res.status(202).json({
-        status: true,
-        data: appointments,
-        msg: "Appointment rejected and deleted",
+    //   const appointments = await AppointmentModel.find({
+    //     doctorId: findDoc._id,
+    //   });
+    //   return res.status(202).json({
+    //     status: true,
+    //     data: appointments,
+    //     msg: "Appointment rejected and deleted",
+    //   });
+    // }
+    console.log(rejectionReason);
+    if (term === "rejected" && !rejectionReason) {
+      return res.status(400).json({
+        status: false,
+        msg: "rejection reason is required when rejecting an appointment",
       });
     }
 
     await AppointmentModel.findByIdAndUpdate(
       _id,
-      { $set: { status: term } },
+      {
+        $set: {
+          status: term,
+          rejection_reason: rejectionReason,
+        },
+      },
       { new: true }
     );
 
@@ -289,9 +304,12 @@ const handleUpdateDocAppointment = async (req, res) => {
     );
 
     const appointments = await AppointmentModel.find({ doctorId: findDoc._id });
+    const filteredAppointments = appointments.filter(
+      (appointment) => appointment.status !== "rejected"
+    );
     return res.status(202).json({
       status: true,
-      data: appointments,
+      data: filteredAppointments,
       msg: "Appointment status updated",
     });
   } catch (error) {

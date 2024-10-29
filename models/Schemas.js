@@ -68,6 +68,10 @@ const appointmentSchema = mongoose.Schema({
     required: true,
     default: "pending",
   },
+  rejection_reason: {
+    type: String,
+    default: "",
+  },
   appointmentDate: {
     type: String,
   },

@@ -162,7 +162,7 @@ const handleGetAllPatients = async (req, res) => {
 const handleAdminCancelAppointment = async (req, res) => {
   const authHeader = req.headers.authorization;
   const token = authHeader ? authHeader.split(" ")[1] : null;
-  const { _id } = req.body;
+  const { term, _id } = req.body;
   try {
     if (!token)
       return res.status(401).json({ status: "failed", msg: "access denied" });
@@ -180,7 +180,29 @@ const handleAdminCancelAppointment = async (req, res) => {
       return res
         .status(404)
         .json({ status: false, msg: "Appointment not found" });
-    await AppointmentModel.findByIdAndDelete(_id);
+    if (!term)
+      return res
+        .status(400)
+        .json({ status: false, msg: "Appointment update status is required" });
+
+    if (term === "delete") {
+      await AppointmentModel.findByIdAndDelete(_id);
+      const otherAppointments = await AppointmentModel.find();
+      return res.status(200).json({
+        status: true,
+        msg: "Appointment deleted successfully",
+        data: otherAppointments,
+      });
+    }
+    await AppointmentModel.findByIdAndUpdate(
+      { _id },
+      {
+        $set: {
+          status: "rejected",
+        },
+      },
+      { new: true }
+    );
     const patientNotification = {
       type: "Appointment",
       text: `Your ${appointment.appointementService} appointment with ${appointment.doctorName} has been cancelled by the Admin`,
@@ -219,6 +241,8 @@ const handleAdminCancelAppointment = async (req, res) => {
         .status(500)
         .json({ status: "failed", msg: "token has expired" });
     } else {
+      console.log(error);
+
       return res.status(500).json({ status: "failed", msg: error.message });
     }
   }
