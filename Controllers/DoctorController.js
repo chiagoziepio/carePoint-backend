@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const uploadToCloudinary = require("../Config/cloudinaryConfig");
 const {
   PatientModel,
   DoctorModel,
@@ -250,29 +251,6 @@ const handleUpdateDocAppointment = async (req, res) => {
       findAppointment.doctorId.toString() !== findDoc._id.toString()
     )
       return res.status(403).json({ status: false, msg: "Action not allowed" });
-
-    // if (term === "reject") {
-    //   await AppointmentModel.findByIdAndDelete(_id);
-    //   const PatientNotification = {
-    //     notificationType: "Appointment",
-    //     text: `Your ${findAppointment.appointementService} with ${findDoc.fullname} has been rejected.`,
-    //   };
-
-    //   await PatientModel.findByIdAndUpdate(
-    //     findAppointment.patientId,
-    //     { $push: { notifications: PatientNotification } },
-    //     { new: true }
-    //   );
-
-    //   const appointments = await AppointmentModel.find({
-    //     doctorId: findDoc._id,
-    //   });
-    //   return res.status(202).json({
-    //     status: true,
-    //     data: appointments,
-    //     msg: "Appointment rejected and deleted",
-    //   });
-    // }
     console.log(rejectionReason);
     if (term === "rejected" && !rejectionReason) {
       return res.status(400).json({
@@ -387,6 +365,53 @@ const handleReadNotificatioon = async (req, res) => {
     }
   }
 };
+const handleDocPicUpdate = async (req, res) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader ? authHeader.split(" ")[1] : null;
+  try {
+    if (!token)
+      return res.status(401).json({ status: "failed", msg: "access denied" });
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_KEY);
+    if (!decoded)
+      return res.status(401).json({ status: "failed", msg: "invalid token" });
+    const email = decoded.email;
+    if (!req.file) {
+      return res.status(400).send("No file uploaded.");
+    }
+    const fileBuffer = req.file.buffer;
+    const result = await uploadToCloudinary(fileBuffer);
+
+    const updatedDoc = await DoctorModel.findOneAndUpdate(
+      { email: email },
+      {
+        $set: {
+          doctorPic: result.secure_url,
+        },
+      },
+      { new: true }
+    );
+
+    await AppointmentModel.updateMany(
+      { doctorId: updatedDoc._id },
+      {
+        $set: {
+          doctorPic: updatedDoc.doctorPic,
+        },
+      }
+    );
+    return res
+      .status(200)
+      .json({ status: true, user: updatedDoc, msg: "Picture Uploaded" });
+  } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      return res
+        .status(500)
+        .json({ status: "failed", msg: "token has expired" });
+    } else {
+      return res.status(500).json({ status: "failed", msg: error.message });
+    }
+  }
+};
 
 module.exports = {
   handleDoctorLogin,
@@ -398,4 +423,5 @@ module.exports = {
   handleUpdateDocAppointment,
   handleGetDocNotification,
   handleReadNotificatioon,
+  handleDocPicUpdate,
 };

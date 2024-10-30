@@ -10,7 +10,9 @@ const {
   handleUpdateDocAppointment,
   handleGetDocNotification,
   handleReadNotificatioon,
+  handleDocPicUpdate,
 } = require("../../Controllers/DoctorController");
+const upload = require("../../Config/multer");
 
 router.post("/login", handleDoctorLogin);
 router.post("/logout", handleDocLogout);
@@ -21,5 +23,6 @@ router.get("/getdoctorappointment/:_id", handleGetAppointment);
 router.patch("/update-appointment", handleUpdateDocAppointment);
 router.get("/get-notification/:_id", handleGetDocNotification);
 router.patch("/markAsRead", handleReadNotificatioon);
+router.patch("/updatepic", upload.single("files"), handleDocPicUpdate);
 
 module.exports = router;
