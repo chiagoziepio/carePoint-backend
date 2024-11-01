@@ -103,7 +103,8 @@ const handleCreateDoctor = async (req, res) => {
       to: email,
       subject: "CarePoint Account Creation",
       text: `An Account has been created for you.\n\n
-        Your credentials are : \n Email : ${email} \n Password : ${password} \n`,
+        Your credentials are : \n Email : ${email} \n Password : ${password} \n 
+         click on the link below to login to your account \n https://care-point-two.vercel.app/`,
     };
 
     // Send email
